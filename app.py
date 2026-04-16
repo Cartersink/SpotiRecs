@@ -30,7 +30,7 @@ def recommend_songs(index):
     X_scaled = scaler.fit_transform(X) 
     
     knn = NearestNeighbors(
-    n_neighbors=6,   # 5 recommendations + itself
+    n_neighbors=10,   # 5 recommendations + itself
     metric="cosine"
     )
 
