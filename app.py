@@ -10,7 +10,7 @@ df = pd.read_csv("tracks_features_clean.csv")
 query = st.text_input("Search songs, artists...")
 
 def recommend_songs(index):
-    songs = pd.read_csv("tracks_features.csv")
+    songs = pd.read_csv("tracks_features_clean.csv")
     features = [
     "danceability",
     "energy",
