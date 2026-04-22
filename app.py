@@ -1,85 +1,19 @@
 import streamlit as st
-from sklearn.neighbors import NearestNeighbors
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
 
-st.title("Song Recommender")
+st.set_page_config(page_title="Music App", layout="wide")
 
-df = pd.read_csv("tracks_features_clean.csv")
+st.title("🎧 Music Recommendation App")
 
-query = st.text_input("Search songs, artists...")
+st.markdown("""
+Welcome! Choose a feature from the sidebar:
 
-def recommend_songs(index):
-    songs = pd.read_csv("tracks_features_clean.csv")
-    features = [
-    "danceability",
-    "energy",
-    "key",
-    "loudness",
-    "mode",
-    "speechiness",
-    "acousticness",
-    "instrumentalness",
-    "liveness",
-    "valence",
-    "tempo"
-    ]
+- 🎵 Song Recommender
+- 🔥 Playlist Generator (coming soon)
+- 📊 Explore Music Data
 
-    X = songs[features]
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X) 
-    
-    knn = NearestNeighbors(
-    n_neighbors=10,   # 5 recommendations + itself
-    metric="cosine"
-    )
+Use the sidebar to navigate.
+""")
 
-    knn.fit(X_scaled)
-    
-    query_vector = X_scaled[index].reshape(1, -1)
-    distances, indices = knn.kneighbors(query_vector)
-    
-    recommended_indices = indices[0][0:]
-
-    recommendations = df.iloc[recommended_indices][
-        ["name", "artists"]
-    ]
-    
-    return recommendations
-
-
-if query:
-    matches = df[
-        df["name"].str.contains(query, case=False, na=False) |
-        df["artists"].str.contains(query, case=False, na=False)
-    ].copy()
-
-    matches["display_name"] = (
-        matches["name"] + " - " + matches["artists"]
-    )
-
-    matches = matches.drop_duplicates(subset=["display_name"])
-
-    if not matches.empty:
-        song_options = {
-            row["display_name"]: idx
-            for idx, row in matches.iterrows()
-        }
-
-        selected_song = st.selectbox(
-            "Choose a song",
-            list(song_options.keys())
-        )
-
-        selected_index = song_options[selected_song]
-
-        st.write("Selected index:", selected_index)
-        
-        if st.button("🎵 Recommend Songs"):
-            recommendations = recommend_songs(selected_index)
-
-            st.subheader("Recommended Songs")
-            st.dataframe(recommendations)       
-
+st.image("https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4", use_container_width=True)
 
 
