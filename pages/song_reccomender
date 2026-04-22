@@ -1,0 +1,85 @@
+#Imports
+import streamlit as st
+from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import StandardScaler
+import pandas as pd
+
+st.title("Song Recommender")
+
+
+#Loads Data
+@st.cache_data
+def load_data():
+    return pd.read_csv("tracks_features_clean.csv")
+
+df = load_data()
+
+#Builds model 
+@st.cache_resource
+def build_model(df):
+    features = [
+        "danceability","energy","key","loudness","mode",
+        "speechiness","acousticness","instrumentalness",
+        "liveness","valence","tempo"
+    ]
+
+    X = df[features]
+
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    knn = NearestNeighbors(n_neighbors=6, metric="cosine")
+    knn.fit(X_scaled)
+
+    return knn, X_scaled
+
+knn, X_scaled = build_model(df)
+
+#Recommendation Function
+def recommend_songs(index):
+    query_vector = X_scaled[index].reshape(1, -1)
+    distances, indices = knn.kneighbors(query_vector)
+
+    recommended_indices = indices[0][1:]  # skip itself
+
+    return df.iloc[recommended_indices][["name", "artists"]]
+
+#Search UI
+query = st.text_input("Search songs or artists")
+
+if query:
+    matches = df[
+        df["name"].str.lower().str.contains(query.lower(), na=False) |
+        df["artists"].str.lower().str.contains(query.lower(), na=False)
+    ].copy()
+
+    matches["display_name"] = (
+        matches["name"] + " - " + matches["artists"]
+    )
+
+    matches = matches.drop_duplicates(subset=["display_name"])
+
+    # limit results (important for performance)
+    matches = matches.head(50)
+
+    if not matches.empty:
+        song_options = {
+            row["display_name"]: idx
+            for idx, row in matches.iterrows()
+        }
+
+        selected_song = st.selectbox(
+            "Choose a song",
+            list(song_options.keys())
+        )
+
+        selected_index = song_options[selected_song]
+
+        if st.button("🎵 Recommend Songs"):
+            recommendations = recommend_songs(selected_index)
+
+            st.subheader("Recommended Songs")
+
+            for _, row in recommendations.iterrows():
+                st.write(f"🎵 {row['name']} — {row['artists']}")
+
